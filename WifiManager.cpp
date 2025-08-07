@@ -2,11 +2,19 @@
 #include <Arduino.h>
 #include "arduino_secrets.h"
 
+/**
+ * Constructor: saves SSID and password.
+ * @param ssid - SSID
+ * @param password - password
+ */
 WifiManager::WifiManager(const char* ssid, const char* password)
   : _ssid(ssid), _password(password), _status(WL_IDLE_STATUS), _connected(false)
 {
 }
 
+/**
+ * Initialize Wi-Fi connection.
+ */
 void WifiManager::begin() {
   Serial.println("Checking Wi-Fi module...");
   if (WiFi.status() == WL_NO_MODULE) {
@@ -23,7 +31,7 @@ void WifiManager::begin() {
   Serial.println(_ssid);
 
   unsigned long startAttemptTime = millis();
-  while (_status != WL_CONNECTED && millis() - startAttemptTime < 30000) {  // 30 сек
+  while (_status != WL_CONNECTED && millis() - startAttemptTime < 30000) {  // 30 sec
     _status = WiFi.begin(_ssid, _password);
     Serial.print(".");
     delay(5000);
@@ -43,13 +51,16 @@ void WifiManager::begin() {
   }
 }
 
+/**
+ * Reconnect to Wi-Fi if connection is lost.
+ */
 void WifiManager::reconnect() {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Wi-Fi lost, attempting reconnection...");
     _connected = false;
     
     unsigned long startAttemptTime = millis();
-    while (_status != WL_CONNECTED && millis() - startAttemptTime < 30000) {  // 30 сек
+    while (_status != WL_CONNECTED && millis() - startAttemptTime < 30000) {  // 30 sec
       _status = WiFi.begin(_ssid, _password);
       Serial.print(".");
       delay(5000);
@@ -66,10 +77,16 @@ void WifiManager::reconnect() {
   }
 }
 
+/**
+ * Check connection status.
+ */
 bool WifiManager::isConnected() {
   return _connected;
 }
 
+/**
+ * Print current network info.
+ */
 void WifiManager::printCurrentNet() {
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
@@ -89,6 +106,9 @@ void WifiManager::printCurrentNet() {
   Serial.println();
 }
 
+/**
+ * Print Wi-Fi module info.
+ */
 void WifiManager::printWifiData() {
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
@@ -99,6 +119,9 @@ void WifiManager::printWifiData() {
   printMacAddress(mac);
 }
 
+/**
+ * Print MAC address.
+ */
 void WifiManager::printMacAddress(byte mac[]) {
   for (int i = 0; i < 6; i++) {
     if (i > 0) {

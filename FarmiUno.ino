@@ -12,18 +12,67 @@
 #include <Adafruit_PWMServoDriver.h>
 #include "TemperatureControl.h"
 
-#define NANO_ADDR 0x10
+/* ======================
+   MAIN ARDUINO SKETCH
+   ======================
+   This sketch implements an automated temperature and humidity control system
+   with heating/cooling, fan management, LCD display, LED matrix, and Wi-Fi.
+   Interacts with Arduino Nano via I2C for fan control.
+*/
 
-// Fan channel.
-#define FAN_CHANNEL 0
+/* --- Pin and constant definitions ---
+   NANO_ADDR - I2C address of Arduino Nano
+   FAN_CHANNEL - fan channel (used for control via Nano)
+   DHTPIN - pin for DHT11 sensor (temperature/humidity)
+   FAN_PIN - PWM pin for coolers
+*/
+
+/* --- Global objects ---
+   matrix - LED matrix
+   dht - temperature and humidity sensor
+   lcd - LCD display via I2C
+   wifiManager - Wi-Fi management
+   httpClient - HTTP client for data sending
+   tc - temperature and actuator control
+*/
+
+/* --- setup() ---
+   Initializes I2C, turns off fans via Nano, sets up temperature controller,
+   starts Serial, LCD, Wi-Fi, DHT11 sensor, LED matrix. Sends first data to server.
+*/
+
+/* --- loop() ---
+   Checks Wi-Fi, updates data on display and LED matrix, sends data to server,
+   updates temperature controller state, 2-second delay.
+*/
+
+/* --- lcdLog ---
+   Displays the last two log lines on the LCD display.
+*/
+
+/* --- printSensorData ---
+   Reads temperature and humidity, displays on LCD and LED matrix.
+*/
+
+/* --- sendSensorData ---
+   Sends temperature, humidity, and system state data to the server via HTTP POST.
+*/
+
+// --- Pin and constant definitions ---
+// NANO_ADDR - I2C address of Arduino Nano
+#define NANO_ADDR 0x10
+// FAN_CHANNEL - fan channel (used for control via Nano)
 // Minimum PWM value.
 #define PWM_MIN 0
  // Maximum PWM value.
 #define PWM_MAX 4095
 
 
+// DHTPIN - pin for DHT11 sensor (temperature/humidity)
 #define DHTPIN 2
+// DHTTYPE - type of DHT sensor (DHT11, DHT22, DHT21)
 #define DHTTYPE DHT11
+// API_ENDPOINT - endpoint for API data sending
 #define API_ENDPOINT "/api/sensors"
 // Wi-Fi timeout in milliseconds.
 #define WIFI_TIMEOUT 20000
@@ -32,13 +81,19 @@
  // PWM pin for coolers.
 #define FAN_PIN 3
 
+// --- Global objects ---
+// matrix - LED matrix
 ArduinoLEDMatrix matrix;
+// dht - temperature and humidity sensor
 DHT dht(DHTPIN, DHTTYPE);
+// lcd - LCD display via I2C
 LCD_Display lcd(0x27, 16, 2);
+// wifiManager - Wi-Fi management
 WifiManager wifiManager(SECRET_SSID, SECRET_PASS);
+// httpClient - HTTP client for data sending
 WiFiClient wifiClient;
 HttpClient httpClient(wifiClient, SECRET_SRV_ADDR, 80);
-
+// tc - temperature and actuator control
 TemperatureControl tc(
   // RPWM - cooling control
   /*coolPWM*/ 9, 
@@ -48,6 +103,9 @@ TemperatureControl tc(
   NANO_ADDR
 );
 
+// --- setup() ---
+// Initializes I2C, turns off fans via Nano, sets up temperature controller,
+// starts Serial, LCD, Wi-Fi, DHT11 sensor, LED matrix. Sends first data to server.
 String lcdLine1 = "";
 String lcdLine2 = "";
 unsigned long lastSendTime = 0;
@@ -120,6 +178,11 @@ void setup() {
   sendSensorData();
 }
 
+/**
+ * Main loop.
+ * Checks Wi-Fi, updates data on display and LED matrix, sends data to server, 
+ * updates temperature controller state, 2-second delay.
+ */
 void loop() {
   if (!wifiManager.isConnected()) {
     lcdLog("Wi-Fi lost!");
@@ -152,7 +215,7 @@ void loop() {
 }
 
 /**
- * Logs messages to the LCD screen.
+ * Displays the last two log lines on the LCD display.
  */
 void lcdLog(const String& message) {
   lcdLine1 = lcdLine2;
@@ -190,7 +253,7 @@ void printSensorData() {
 }
 
 /**
- * Sends sensor data to the backend server.
+ * Sends temperature, humidity, and system state data to the server via HTTP POST.
  */
 void sendSensorData() {
   Serial.println(">>> sendSensorData");

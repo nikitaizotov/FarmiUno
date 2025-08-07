@@ -1,9 +1,18 @@
 #include "TemperatureControl.h"
 #include <Wire.h>
 
+/**
+ * Constructor: initializes pins and Nano address.
+ * @param coolPWM - PWM pin for cooling (Peltier)
+ * @param heatPWM - PWM pin for heating (Peltier)
+ * @param nanoAddr - I2C address of Arduino Nano
+ */
 TemperatureControl::TemperatureControl(uint8_t coolPWM, uint8_t heatPWM, uint8_t nanoAddr)
   : _coolPWMPin(coolPWM), _heatPWMPin(heatPWM), _nanoAddr(nanoAddr) {}
 
+/**
+ * Initializes pins, sets initial states.
+ */
 void TemperatureControl::begin() {
   pinMode(_coolPWMPin, OUTPUT);
   pinMode(_heatPWMPin, OUTPUT);
@@ -15,6 +24,10 @@ void TemperatureControl::begin() {
   _lastHeatingTime = millis();
 }
 
+/**
+ * Enable/disable cooling (Peltier).
+ * @param enabled - true to enable, false to disable
+ */
 void TemperatureControl::setCooling(bool enabled) {
   if (enabled && !_isCooling) {
     analogWrite(_coolPWMPin, 255);
@@ -31,6 +44,10 @@ void TemperatureControl::setCooling(bool enabled) {
   }
 }
 
+/**
+ * Enable/disable heating (Peltier).
+ * @param enabled - true to enable, false to disable
+ */
 void TemperatureControl::setHeating(bool enabled) {
   if (enabled && !_isHeating) {
     analogWrite(_heatPWMPin, 255);
@@ -47,11 +64,18 @@ void TemperatureControl::setHeating(bool enabled) {
   }
 }
 
+/**
+ * Stop Peltier (heating and cooling).
+ */
 void TemperatureControl::stopPeltier() {
   analogWrite(_coolPWMPin, 0);
   analogWrite(_heatPWMPin, 0);
 }
 
+/**
+ * Control Peltier fan speed via I2C.
+ * @param speed - speed to set
+ */
 void TemperatureControl::setPeltierFanSpeed(uint8_t speed) {
   Wire.beginTransmission(_nanoAddr);
   Wire.write(3);
@@ -59,10 +83,18 @@ void TemperatureControl::setPeltierFanSpeed(uint8_t speed) {
   Wire.endTransmission();
 }
 
+/**
+ * Control Nano fan via I2C (enable/disable).
+ * @param enabled - true to enable, false to disable
+ */
 void TemperatureControl::setNanoFan(bool enabled) {
   setNanoFanPWM(enabled ? _nanoFanSpeed : 0);
 }
 
+/**
+ * Set PWM for Nano fan via I2C.
+ * @param value - PWM value
+ */
 void TemperatureControl::setNanoFanPWM(uint8_t value) {
   static uint8_t lastValue = 255;
   if (value != lastValue) {
@@ -74,20 +106,35 @@ void TemperatureControl::setNanoFanPWM(uint8_t value) {
   }
 }
 
+/**
+ * Set Nano fan speed (saved for later use).
+ * @param value - speed to set
+ */
 void TemperatureControl::setNanoFanSpeed(uint8_t value) {
   _nanoFanSpeed = constrain(value, 0, 255);
   Serial.print("Set NanoFan Speed = ");
   Serial.println(_nanoFanSpeed);
 }
 
+/**
+ * Set target temperature.
+ * @param target - target temperature
+ */
 void TemperatureControl::setTargetTemperature(float target) {
   _targetTemp = target;
 }
 
+/**
+ * Set current temperature.
+ * @param temp - current temperature
+ */
 void TemperatureControl::setCurrentTemperature(float temp) {
   _currentTemp = temp;
 }
 
+/**
+ * Main temperature control logic: enables/disables heating/cooling, controls fans, implements delays.
+ */
 void TemperatureControl::handle() {
   unsigned long now = millis();
 
@@ -104,7 +151,7 @@ void TemperatureControl::handle() {
     }
   }
 
-  // Calcualting limits.
+  // Calculating limits.
   const float heatStart = _targetTemp - _tolerance;
   const float coolStart = _targetTemp + _tolerance;
   const float heatStop = _targetTemp - 0.1;
@@ -144,13 +191,18 @@ void TemperatureControl::handle() {
   else Serial.println("IDLE");
 }
 
-
+/**
+ * Turn off all actuators.
+ */
 void TemperatureControl::offAll() {
   stopPeltier();
   setPeltierFanSpeed(0);
   setNanoFanPWM(0);
 }
 
+/**
+ * Force cooling mode: Peltier off, fans on.
+ */
 void TemperatureControl::forceCooling() {
   stopPeltier();
   setPeltierFanSpeed(_peltierFanSpeed);
